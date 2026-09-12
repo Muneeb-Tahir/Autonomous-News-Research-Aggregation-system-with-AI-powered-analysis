@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Intelligence Agent — Top Stories</title>
+    <meta name="description" content="AI-powered multi-source news intelligence agent. Get the top 5 most important stories right now.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>" type="image/svg+xml">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Header -->
+    <!-- ═══════════════════════════════════════════ -->
+    <header id="app-header">
+        <div class="header-content">
+            <div class="brand">
+                <span class="brand-icon">&#x1F525;</span>
+                <h1>News Intelligence Agent</h1>
+                <span class="badge">LIVE</span>
+            </div>
+            <div class="header-actions">
+                <button class="collect-btn" id="collect-btn" onclick="triggerCollection()">
+                    <span class="collect-icon" id="collect-icon">&#x26A1;</span>
+                    <span id="collect-text">Generate News</span>
+                </button>
+                <div class="header-status" id="header-status">
+                    <span class="status-dot" id="status-dot"></span>
+                    <span id="status-text">Connecting...</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Category Filters -->
+    <!-- ═══════════════════════════════════════════ -->
+    <nav id="category-nav">
+        <div class="category-scroll">
+            <button class="cat-btn active" data-category="" id="cat-all">All News</button>
+            <button class="cat-btn" data-category="WORLD" id="cat-world">&#x1F30D; World</button>
+            <button class="cat-btn" data-category="TECHNOLOGY" id="cat-tech">&#x1F4BB; Tech</button>
+            <button class="cat-btn" data-category="AI" id="cat-ai">&#x1F916; AI</button>
+            <button class="cat-btn" data-category="BUSINESS" id="cat-biz">&#x1F4B0; Business</button>
+            <button class="cat-btn" data-category="SCIENCE" id="cat-sci">&#x1F52C; Science</button>
+            <button class="cat-btn" data-category="HEALTH" id="cat-health">&#x1F3E5; Health</button>
+            <button class="cat-btn" data-category="SPORTS" id="cat-sports">&#x26BD; Sports</button>
+            <button class="cat-btn" data-category="SPACE" id="cat-space">&#x1F680; Space</button>
+            <button class="cat-btn" data-category="CRYPTO" id="cat-crypto">&#x20BF; Crypto</button>
+            <button class="cat-btn" data-category="ENTERTAINMENT" id="cat-ent">&#x1F3AC; Entertainment</button>
+            <button class="cat-btn" data-category="CYBERSECURITY" id="cat-cyber">&#x1F512; Cyber</button>
+            <span class="nav-divider">|</span>
+            <button class="cat-btn research-tab" id="cat-research" data-mode="research">&#x1F4DA; Research Papers</button>
+        </div>
+    </nav>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Main Content -->
+    <!-- ═══════════════════════════════════════════ -->
+    <main id="main-content">
+        <!-- Loading State -->
+        <div id="loading" class="loading-container">
+            <div class="loader"></div>
+            <p>Analyzing news from multiple sources...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="error" class="error-container" style="display: none;">
+            <span class="error-icon">&#x26A0;&#xFE0F;</span>
+            <h2>Unable to load news</h2>
+            <p id="error-message">Please check if the server is running.</p>
+            <button onclick="fetchNews()" class="retry-btn" id="retry-btn">Retry</button>
+        </div>
+
+        <!-- News Cards -->
+        <div id="news-cards" class="news-grid" style="display: none;"></div>
+
+        <!-- Empty State -->
+        <div id="empty" class="empty-container" style="display: none;">
+            <span class="empty-icon">&#x1F4ED;</span>
+            <h2>No news found</h2>
+            <p>Try a different category or click "Generate News" to fetch fresh articles.</p>
+        </div>
+
+        <!-- Research Papers Section -->
+        <div id="research-section" style="display: none;">
+            <div class="research-header">
+                <h2 class="section-title">&#x1F4DA; Latest Research Papers</h2>
+                <p class="section-subtitle">AI-analyzed papers from arXiv across 20 categories</p>
+                <div class="research-filters">
+                    <button class="research-filter active" data-priority="" onclick="filterResearch(this)">All</button>
+                    <button class="research-filter" data-priority="1" onclick="filterResearch(this)">&#x1F916; AI/ML</button>
+                    <button class="research-filter" data-priority="2" onclick="filterResearch(this)">&#x1F4BB; Core Tech</button>
+                    <button class="research-filter" data-priority="3" onclick="filterResearch(this)">&#x1F525; Trending</button>
+                </div>
+                <button class="collect-btn" id="research-refresh-btn" onclick="refreshResearch()">
+                    <span class="collect-icon" id="research-refresh-icon">&#x26A1;</span>
+                    <span id="research-refresh-text">Fetch Papers</span>
+                </button>
+            </div>
+            <div id="research-loading" class="loading-container" style="display: none;">
+                <div class="loader"></div>
+                <p>Fetching research papers from arXiv...</p>
+            </div>
+            <div id="research-cards" class="research-grid"></div>
+            <div id="research-empty" class="empty-container" style="display: none;">
+                <span class="empty-icon">&#x1F4DA;</span>
+                <h2>No research papers yet</h2>
+                <p>Click "Fetch Papers" to get the latest research from arXiv.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Chatbot Panel -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="chatbot-toggle" class="chatbot-toggle" onclick="toggleChatbot()">
+        <span class="chatbot-toggle-icon">&#x1F4AC;</span>
+    </div>
+
+    <div id="chatbot-panel" class="chatbot-panel">
+        <div class="chatbot-header">
+            <div class="chatbot-title">
+                <span>&#x1F916;</span>
+                <h3>News Assistant</h3>
+            </div>
+            <button class="chatbot-close" onclick="toggleChatbot()">&#x2715;</button>
+        </div>
+
+        <div class="chatbot-messages" id="chatbot-messages">
+            <div class="chat-message bot">
+                <div class="chat-bubble">
+                    Hi! I'm your News Intelligence assistant. Try these commands:<br><br>
+                    <code>/top5</code> — Top 5 news<br>
+                    <code>/top5 ai</code> — Top 5 AI news<br>
+                    <code>/breaking</code> — Breaking news<br>
+                    <code>/latest</code> — Recent articles<br>
+                    <code>/status</code> — System health<br><br>
+                    Or ask naturally: <em>"What's the biggest tech news today?"</em>
+                </div>
+            </div>
+        </div>
+
+        <div class="chatbot-input-area">
+            <input
+                type="text"
+                id="chatbot-input"
+                class="chatbot-input"
+                placeholder="Type a command or question..."
+                autocomplete="off"
+                onkeydown="if(event.key==='Enter')sendMessage()"
+            >
+            <button class="chatbot-send" id="chatbot-send" onclick="sendMessage()">
+                &#x27A4;
+            </button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Footer -->
+    <!-- ═══════════════════════════════════════════ -->
+    <footer id="app-footer">
+        <div class="footer-content">
+            <p>Multi-source AI news intelligence &bull; Data from RSS feeds, NewsAPI, Google News</p>
+            <p id="last-updated">Last updated: &mdash;</p>
+        </div>
+    </footer>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
