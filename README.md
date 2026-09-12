@@ -45,33 +45,8 @@ arXiv (20 categories) ──→ Research Collector ──→ Semantic Scholar
                                                  Research Analyzer (Gemini)
                                                         ↓
                                                  📚 Research Papers Tab
-```
 
-## Quick Start
-
-### 1. Get API Keys (free)
-
-| Service | Link | Free Tier |
-|---------|------|-----------|
-| NewsAPI | [newsapi.org/register](https://newsapi.org/register) | 100 req/day |
-| Google Gemini | [aistudio.google.com](https://aistudio.google.com/apikey) | 1,500 req/day |
-| Supabase | [supabase.com](https://supabase.com) | 500MB, 50K rows |
-
-### 2. Setup Database
-
-1. Create a Supabase project
-2. Go to **SQL Editor**
-3. Paste and run `database/schema.sql`
-4. Paste and run `database/schema_research.sql`
-
-### 3. Configure Environment
-
-```bash
-cp .env.example .env
-# Edit .env with your API keys
-```
-
-### 4. Install & Run
+### 1. Install & Run
 
 ```bash
 pip install -r requirements.txt
@@ -140,14 +115,6 @@ New_Fetching_Agent/
 
 ## Deployment
 
-Set `API_HOST=0.0.0.0` in `.env` for external access.
-
-| Platform | How |
-|----------|-----|
-| Railway | `railway up` |
-| Render | Connect GitHub, set env vars |
-| Fly.io | Add `fly.toml`, `flyctl deploy` |
-| VPS | Docker or systemd service |
 
 ## License
 
