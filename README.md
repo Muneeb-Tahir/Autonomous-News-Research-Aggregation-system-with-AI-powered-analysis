@@ -1,4 +1,4 @@
-# 🔥 News Intelligence Agent
+# News Intelligence Agent
 
 A multi-source AI-powered news aggregation and ranking system that continuously collects, processes, and ranks news from 25+ sources across every major category. Also fetches and analyzes research papers from arXiv and Semantic Scholar.
 
