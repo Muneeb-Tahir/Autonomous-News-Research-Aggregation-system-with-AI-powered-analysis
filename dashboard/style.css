@@ -1290,10 +1290,301 @@ body::before {
         max-height: 70vh;
     }
 
-    .chatbot-toggle {
+        .chatbot-toggle {
         width: 48px;
         height: 48px;
         bottom: 16px;
         right: 16px;
     }
+
+    .progress-bar-compact {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .progress-bar-center {
+        order: 3;
+        width: 100%;
+    }
+
+    .progress-bar-right {
+        gap: 8px;
+    }
+}
+
+/* ─── Progress Tracker Bottom Bar ──────────────── */
+.progress-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 300;
+    background: rgba(10, 14, 23, 0.92);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-top: 1px solid rgba(99, 102, 241, 0.2);
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.5);
+    animation: progress-slide-up 0.4s ease-out;
+}
+
+@keyframes progress-slide-up {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.progress-bar-compact {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 24px;
+    cursor: pointer;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.progress-bar-compact:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.progress-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 200px;
+}
+
+.progress-pulse {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+    animation: progress-pulse-anim 1.5s ease-in-out infinite;
+    flex-shrink: 0;
+}
+
+.progress-bar.completed .progress-pulse {
+    background: var(--accent-green);
+    animation: none;
+}
+
+.progress-bar.error .progress-pulse {
+    background: var(--accent-red);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+    animation: none;
+}
+
+.progress-bar.stuck .progress-pulse {
+    background: var(--accent-amber);
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+}
+
+@keyframes progress-pulse-anim {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+.progress-stage-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.progress-bar-center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.progress-track {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6, #06b6d4);
+    background-size: 200% 100%;
+    animation: progress-shimmer 2s linear infinite;
+    transition: width 0.5s ease-out;
+    position: relative;
+}
+
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 30px;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3));
+    border-radius: 3px;
+}
+
+.progress-bar.completed .progress-fill {
+    background: var(--accent-green);
+    animation: none;
+}
+
+@keyframes progress-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.progress-percent {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent-blue);
+    min-width: 35px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.progress-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+}
+
+.progress-timer {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent-cyan);
+    font-variant-numeric: tabular-nums;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+.progress-eta {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.progress-items {
+    font-size: 11px;
+    color: var(--text-secondary);
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-color);
+}
+
+.progress-expand {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-muted);
+    font-size: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.progress-expand:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+}
+
+.progress-expand.expanded {
+    transform: rotate(180deg);
+}
+
+/* Details panel */
+.progress-details {
+    border-top: 1px solid var(--border-color);
+    padding: 16px 24px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    animation: details-slide 0.3s ease-out;
+}
+
+@keyframes details-slide {
+    from { opacity: 0; max-height: 0; }
+    to { opacity: 1; max-height: 400px; }
+}
+
+.progress-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.timeline-stage {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast);
+}
+
+.timeline-stage.active {
+    background: rgba(99, 102, 241, 0.08);
+}
+
+.timeline-stage.done {
+    opacity: 0.7;
+}
+
+.timeline-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    transition: all var(--transition-fast);
+}
+
+.timeline-stage.active .timeline-dot {
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+}
+
+.timeline-stage.done .timeline-dot {
+    background: var(--accent-green);
+    border-color: var(--accent-green);
+}
+
+.timeline-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    flex: 1;
+}
+
+.timeline-stage.active .timeline-name {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.timeline-status {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.timeline-stage.active .timeline-status {
+    color: var(--accent-cyan);
+}
+
+.timeline-stage.done .timeline-status {
+    color: var(--accent-green);
 }

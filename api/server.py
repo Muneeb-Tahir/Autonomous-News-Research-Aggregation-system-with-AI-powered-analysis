@@ -2,12 +2,14 @@
 FastAPI server for the News Intelligence Agent.
 
 Provides REST API endpoints and serves the web dashboard.
-Runs alongside the scheduler.
+Runs alongside the scheduler. Includes SSE endpoint for
+real-time progress tracking.
 """
 
+import asyncio
 from fastapi import FastAPI, Query, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
@@ -266,8 +268,67 @@ async def trigger_collection(request: Request):
 
 @app.get("/api/collect/status")
 async def collection_status():
-    """Check if a collection is currently running."""
-    return {"is_collecting": _is_collecting, "is_fetching_papers": _is_fetching_papers}
+    """Check if a collection is currently running, with current progress."""
+    from services.progress_tracker import get_tracker
+    tracker = get_tracker()
+
+    result = {
+        "is_collecting": tracker.is_running or _is_collecting,
+        "is_fetching_papers": _is_fetching_papers,
+    }
+
+    # Include current progress event if available
+    if tracker._current_event:
+        from dataclasses import asdict
+        result["progress"] = asdict(tracker._current_event)
+
+    return result
+
+
+@app.get("/api/collect/progress")
+async def collect_progress_sse(request: Request):
+    """Server-Sent Events endpoint for real-time collection progress.
+
+    Streams progress events as they happen during news collection.
+    The client connects once and receives updates automatically.
+    """
+    from services.progress_tracker import get_tracker
+
+    tracker = get_tracker()
+    queue = tracker.subscribe()
+
+    async def event_stream():
+        try:
+            while True:
+                # Check if client disconnected
+                if await request.is_disconnected():
+                    break
+
+                # Non-blocking check for events
+                try:
+                    event = queue.get_nowait()
+                    yield f"data: {event.to_json()}\n\n"
+
+                    # Stop streaming after completion or error
+                    if event.status in ("completed", "error"):
+                        break
+                except Exception:
+                    # No event available, send keepalive
+                    yield ": keepalive\n\n"
+
+                await asyncio.sleep(0.5)
+        finally:
+            tracker.unsubscribe(queue)
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 # =============================================================

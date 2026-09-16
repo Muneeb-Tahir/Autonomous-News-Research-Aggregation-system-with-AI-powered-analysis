@@ -160,6 +160,33 @@
     </div>
 
     <!-- ═══════════════════════════════════════════ -->
+    <!-- Progress Tracker Bottom Bar -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="progress-bar" class="progress-bar" style="display: none;">
+        <div class="progress-bar-compact" onclick="toggleProgressDetails()">
+            <div class="progress-bar-left">
+                <span class="progress-pulse" id="progress-pulse"></span>
+                <span class="progress-stage-name" id="progress-stage-name">Starting...</span>
+            </div>
+            <div class="progress-bar-center">
+                <div class="progress-track">
+                    <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                </div>
+                <span class="progress-percent" id="progress-percent">0%</span>
+            </div>
+            <div class="progress-bar-right">
+                <span class="progress-timer" id="progress-timer">0:00</span>
+                <span class="progress-eta" id="progress-eta"></span>
+                <span class="progress-items" id="progress-items"></span>
+                <button class="progress-expand" id="progress-expand">&#x25B2;</button>
+            </div>
+        </div>
+        <div class="progress-details" id="progress-details" style="display: none;">
+            <div class="progress-timeline" id="progress-timeline"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
     <!-- Footer -->
     <!-- ═══════════════════════════════════════════ -->
     <footer id="app-footer">

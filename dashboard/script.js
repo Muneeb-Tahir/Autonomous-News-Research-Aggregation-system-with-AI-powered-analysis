@@ -123,8 +123,28 @@ async function fetchStatus() {
 }
 
 // ═══════════════════════════════════════════════════
-// Generate News (On-Demand Collection)
+// Generate News (SSE Real-Time Progress)
 // ═══════════════════════════════════════════════════
+let progressEventSource = null;
+let progressStartTime = null;
+let progressTimerInterval = null;
+let lastProgressUpdate = null;
+let stuckCheckInterval = null;
+let progressDetailsOpen = false;
+
+const STAGE_NAMES = [
+    { id: 'rss_fetch', name: 'Fetching RSS feeds' },
+    { id: 'newsapi_fetch', name: 'Fetching from NewsAPI' },
+    { id: 'normalize', name: 'Normalizing articles' },
+    { id: 'filter', name: 'Filtering articles' },
+    { id: 'deduplicate', name: 'Removing duplicates' },
+    { id: 'score', name: 'Scoring articles' },
+    { id: 'group', name: 'Grouping stories' },
+    { id: 'authenticity', name: 'Checking authenticity' },
+    { id: 'store', name: 'Storing in database' },
+    { id: 'cleanup', name: 'Finalizing' },
+];
+
 async function triggerCollection() {
     const btn = document.getElementById('collect-btn');
     const icon = document.getElementById('collect-icon');
@@ -143,11 +163,11 @@ async function triggerCollection() {
 
         if (data.status === 'already_running') {
             text.textContent = 'Already running...';
-        } else {
-            text.textContent = 'Collecting...';
-            // Poll for completion
-            pollCollectionStatus(btn, icon, text);
         }
+
+        // Start SSE connection for real-time progress
+        startProgressTracking();
+
     } catch (err) {
         console.error('Failed to trigger collection:', err);
         btn.classList.remove('collecting');
@@ -156,7 +176,220 @@ async function triggerCollection() {
     }
 }
 
-function pollCollectionStatus(btn, icon, text) {
+function startProgressTracking() {
+    // Clean up any existing connection
+    stopProgressTracking();
+
+    progressStartTime = Date.now();
+    lastProgressUpdate = Date.now();
+
+    // Show progress bar
+    const bar = document.getElementById('progress-bar');
+    bar.style.display = 'block';
+    bar.className = 'progress-bar';
+
+    // Initialize timeline
+    buildTimeline();
+
+    // Start elapsed timer
+    progressTimerInterval = setInterval(updateElapsedTimer, 1000);
+
+    // Start stuck detection
+    stuckCheckInterval = setInterval(checkIfStuck, 5000);
+
+    // Connect to SSE endpoint
+    progressEventSource = new EventSource(`${API_BASE}/api/collect/progress`);
+
+    progressEventSource.onmessage = function(event) {
+        try {
+            const data = JSON.parse(event.data);
+            lastProgressUpdate = Date.now();
+            handleProgressEvent(data);
+        } catch (e) {
+            console.error('Failed to parse progress event:', e);
+        }
+    };
+
+    progressEventSource.onerror = function() {
+        // SSE connection lost — fall back to polling status
+        console.warn('SSE connection lost, falling back to status polling');
+        stopProgressTracking();
+        pollCollectionFallback();
+    };
+}
+
+function stopProgressTracking() {
+    if (progressEventSource) {
+        progressEventSource.close();
+        progressEventSource = null;
+    }
+    if (progressTimerInterval) {
+        clearInterval(progressTimerInterval);
+        progressTimerInterval = null;
+    }
+    if (stuckCheckInterval) {
+        clearInterval(stuckCheckInterval);
+        stuckCheckInterval = null;
+    }
+}
+
+function handleProgressEvent(data) {
+    const bar = document.getElementById('progress-bar');
+
+    // Calculate overall percentage from stage progress
+    const stagePercent = (data.stage_number / data.total_stages) * 100;
+    const percent = Math.min(Math.round(stagePercent), 100);
+
+    // Update compact bar
+    document.getElementById('progress-stage-name').textContent = data.stage_name || data.message || 'Processing...';
+    document.getElementById('progress-fill').style.width = percent + '%';
+    document.getElementById('progress-percent').textContent = percent + '%';
+
+    // Update ETA
+    if (data.eta_seconds > 0 && data.status === 'running') {
+        document.getElementById('progress-eta').textContent = 'ETA ' + formatDuration(data.eta_seconds);
+    } else {
+        document.getElementById('progress-eta').textContent = '';
+    }
+
+    // Update items
+    if (data.total_items > 0) {
+        document.getElementById('progress-items').textContent = `${data.current_items}/${data.total_items}`;
+        document.getElementById('progress-items').style.display = 'inline';
+    } else {
+        document.getElementById('progress-items').style.display = 'none';
+    }
+
+    // Update timeline
+    updateTimeline(data.stage, data.stage_number, data.message);
+
+    // Handle completion
+    if (data.status === 'completed') {
+        bar.className = 'progress-bar completed';
+        document.getElementById('progress-stage-name').textContent =
+            `Done! ${data.results?.stored_count || 0} articles stored`;
+        document.getElementById('progress-fill').style.width = '100%';
+        document.getElementById('progress-percent').textContent = '100%';
+        document.getElementById('progress-eta').textContent = '';
+
+        onCollectionComplete(data);
+    } else if (data.status === 'error') {
+        bar.className = 'progress-bar error';
+        document.getElementById('progress-stage-name').textContent = 'Error: ' + (data.message || 'Unknown error');
+        onCollectionComplete(data);
+    }
+}
+
+function onCollectionComplete(data) {
+    stopProgressTracking();
+
+    // Update the Generate News button
+    const btn = document.getElementById('collect-btn');
+    const icon = document.getElementById('collect-icon');
+    const text = document.getElementById('collect-text');
+
+    btn.classList.remove('collecting');
+    icon.innerHTML = '&#x2713;';
+    text.textContent = 'Done!';
+
+    // Refresh news and status
+    fetchNews();
+    fetchStatus();
+
+    // Reset button after 3 seconds
+    setTimeout(() => {
+        icon.innerHTML = '&#x26A1;';
+        text.textContent = 'Generate News';
+    }, 3000);
+
+    // Hide progress bar after 5 seconds
+    setTimeout(() => {
+        const bar = document.getElementById('progress-bar');
+        bar.style.display = 'none';
+        bar.className = 'progress-bar';
+        document.getElementById('progress-fill').style.width = '0%';
+        progressDetailsOpen = false;
+        document.getElementById('progress-details').style.display = 'none';
+        document.getElementById('progress-expand').classList.remove('expanded');
+    }, 5000);
+}
+
+function updateElapsedTimer() {
+    if (!progressStartTime) return;
+    const elapsed = (Date.now() - progressStartTime) / 1000;
+    document.getElementById('progress-timer').textContent = formatDuration(elapsed);
+}
+
+function checkIfStuck() {
+    if (!lastProgressUpdate) return;
+    const timeSinceUpdate = (Date.now() - lastProgressUpdate) / 1000;
+
+    const bar = document.getElementById('progress-bar');
+    if (timeSinceUpdate > 30) {
+        bar.classList.add('stuck');
+        document.getElementById('progress-eta').textContent = 'Possible delay...';
+    } else {
+        bar.classList.remove('stuck');
+    }
+}
+
+function formatDuration(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+function buildTimeline() {
+    const container = document.getElementById('progress-timeline');
+    container.innerHTML = '';
+
+    STAGE_NAMES.forEach((stage, i) => {
+        const div = document.createElement('div');
+        div.className = 'timeline-stage';
+        div.id = `timeline-${stage.id}`;
+        div.innerHTML = `
+            <span class="timeline-dot"></span>
+            <span class="timeline-name">${stage.name}</span>
+            <span class="timeline-status" id="timeline-status-${stage.id}">Pending</span>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function updateTimeline(activeStageId, stageNumber, message) {
+    STAGE_NAMES.forEach((stage, i) => {
+        const el = document.getElementById(`timeline-${stage.id}`);
+        if (!el) return;
+
+        const statusEl = document.getElementById(`timeline-status-${stage.id}`);
+
+        if (i + 1 < stageNumber) {
+            // Completed
+            el.className = 'timeline-stage done';
+            if (statusEl) statusEl.textContent = '✓ Done';
+        } else if (stage.id === activeStageId) {
+            // Active
+            el.className = 'timeline-stage active';
+            if (statusEl) statusEl.textContent = message || 'In progress...';
+        } else {
+            // Pending
+            el.className = 'timeline-stage';
+            if (statusEl) statusEl.textContent = 'Pending';
+        }
+    });
+}
+
+function toggleProgressDetails() {
+    const details = document.getElementById('progress-details');
+    const expandBtn = document.getElementById('progress-expand');
+
+    progressDetailsOpen = !progressDetailsOpen;
+    details.style.display = progressDetailsOpen ? 'block' : 'none';
+    expandBtn.classList.toggle('expanded', progressDetailsOpen);
+}
+
+// Fallback polling if SSE fails
+function pollCollectionFallback() {
     const poll = setInterval(async () => {
         try {
             const response = await fetch(`${API_BASE}/api/collect/status`);
@@ -164,27 +397,15 @@ function pollCollectionStatus(btn, icon, text) {
 
             if (!data.is_collecting) {
                 clearInterval(poll);
-                btn.classList.remove('collecting');
-                icon.innerHTML = '&#x2713;';
-                text.textContent = 'Done!';
-
-                // Refresh news and status
-                fetchNews();
-                fetchStatus();
-
-                // Reset button after 2 seconds
-                setTimeout(() => {
-                    icon.innerHTML = '&#x26A1;';
-                    text.textContent = 'Generate News';
-                }, 2000);
+                onCollectionComplete({});
+            } else if (data.progress) {
+                handleProgressEvent(data.progress);
             }
         } catch (err) {
             clearInterval(poll);
-            btn.classList.remove('collecting');
-            icon.innerHTML = '&#x26A1;';
-            text.textContent = 'Generate News';
+            onCollectionComplete({});
         }
-    }, 3000); // Check every 3 seconds
+    }, 3000);
 }
 
 // ═══════════════════════════════════════════════════
