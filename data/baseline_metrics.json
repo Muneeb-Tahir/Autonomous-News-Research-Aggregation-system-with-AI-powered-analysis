@@ -1,0 +1,88 @@
+{
+  "total_articles": 1454,
+  "category_distribution": {
+    "SPORTS": 217,
+    "GENERAL": 216,
+    "TECHNOLOGY": 188,
+    "BUSINESS": 182,
+    "HEALTH": 143,
+    "ENTERTAINMENT": 143,
+    "SCIENCE": 136,
+    "WORLD": 86,
+    "SPACE": 59,
+    "CYBERSECURITY": 49,
+    "CRYPTO": 25,
+    "AI": 10
+  },
+  "num_categories_used": 12,
+  "most_common_category": [
+    "SPORTS",
+    217
+  ],
+  "least_common_category": [
+    "AI",
+    10
+  ],
+  "num_unique_sources": 164,
+  "top_10_sources": {
+    "Google News Science": 102,
+    "Google News Health": 99,
+    "Google News Entertainment": 99,
+    "Google News Business": 94,
+    "Google News Technology": 78,
+    "BBC Sport": 74,
+    "Google News Sports": 74,
+    "Google News World": 59,
+    "Google News Top Stories": 51,
+    "ESPN": 49
+  },
+  "processed_articles": 1454,
+  "unprocessed_articles": 0,
+  "processing_rate": 100.0,
+  "breaking_articles": 0,
+  "breaking_rate": 0.0,
+  "score_stats": {
+    "min": 31.9,
+    "max": 76.3,
+    "mean": 49.34,
+    "median": 48.8
+  },
+  "unique_story_groups": 1451,
+  "articles_in_story_groups": 1454,
+  "story_group_rate": 100.0,
+  "date_range": {
+    "earliest": "2026-09-04T23:47:40+00:00",
+    "latest": "2026-09-11T23:15:19.145303+00:00"
+  },
+  "content_quality": {
+    "with_description": 1424,
+    "with_content": 347,
+    "with_author": 526,
+    "with_image": 664,
+    "description_rate": 97.9,
+    "content_rate": 23.9
+  },
+  "rule_based_classification": {
+    "method": "keyword matching in processors/normalizer.py",
+    "categories_used": [
+      "GENERAL",
+      "WORLD",
+      "TECHNOLOGY",
+      "SPORTS",
+      "BUSINESS",
+      "SCIENCE",
+      "HEALTH",
+      "ENTERTAINMENT",
+      "AI",
+      "SPACE",
+      "CRYPTO",
+      "CYBERSECURITY"
+    ],
+    "note": "These are the labels assigned by the existing rule-based system. ML classification will be compared against a manually-verified gold set."
+  },
+  "language_distribution": {
+    "en": 1454
+  },
+  "fetch_time_seconds": 3.17,
+  "measurement_timestamp": "2026-09-16T17:14:21.925468+00:00"
+}
